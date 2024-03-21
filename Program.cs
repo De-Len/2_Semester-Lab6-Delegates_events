@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Linq.Expressions;
 using static System.Net.Mime.MediaTypeNames;
@@ -580,12 +580,12 @@ public abstract class BaseHandler
     protected abstract void HandleEvent(IEvent ev);
 }
 
-class Handler5 : BaseHandler
+class InvertHandler : BaseHandler
 {
     private SquareMatrix _matrix1;
     private SquareMatrix _matrix2;
 
-    public Handler5(SquareMatrix matrix1, SquareMatrix matrix2) : base(matrix1, matrix2)
+    public InvertHandler(SquareMatrix matrix1, SquareMatrix matrix2) : base(matrix1, matrix2)
     {
         PrivateEvent = new MatrixInvert();
         SetNextHandler(null);
@@ -603,15 +603,15 @@ class Handler5 : BaseHandler
     }
 }
 
-class Handler4 : BaseHandler
+class DeterminantHandler : BaseHandler
 {
     private SquareMatrix _matrix1;
     private SquareMatrix _matrix2;
 
-    public Handler4(SquareMatrix matrix1, SquareMatrix matrix2) : base(matrix1, matrix2)
+    public DeterminantHandler(SquareMatrix matrix1, SquareMatrix matrix2) : base(matrix1, matrix2)
     {
         PrivateEvent = new Determinant();
-        SetNextHandler(new Handler5(matrix1, matrix2));
+        SetNextHandler(new InvertHandler(matrix1, matrix2));
 
         this._matrix1 = matrix1;
         this._matrix2 = matrix2;
@@ -626,15 +626,15 @@ class Handler4 : BaseHandler
     }
 }
 
-class Handler3 : BaseHandler
+class TraceHandler : BaseHandler
 {
     private SquareMatrix _matrix1;
     private SquareMatrix _matrix2;
 
-    public Handler3(SquareMatrix matrix1, SquareMatrix matrix2) : base(matrix1, matrix2)
+    public TraceHandler(SquareMatrix matrix1, SquareMatrix matrix2) : base(matrix1, matrix2)
     {
         PrivateEvent = new Trace();
-        SetNextHandler(new Handler4(matrix1, matrix2));
+        SetNextHandler(new DeterminantHandler(matrix1, matrix2));
 
         this._matrix1 = matrix1;
         this._matrix2 = matrix2;
@@ -648,15 +648,15 @@ class Handler3 : BaseHandler
     }
 }
 
-class Handler2 : BaseHandler
+class ProductHandler : BaseHandler
 {
     private SquareMatrix _matrix1;
     private SquareMatrix _matrix2;
 
-    public Handler2(SquareMatrix matrix1, SquareMatrix matrix2) : base(matrix1, matrix2)
+    public ProductHandler(SquareMatrix matrix1, SquareMatrix matrix2) : base(matrix1, matrix2)
     {
         PrivateEvent = new Product();
-        SetNextHandler(new Handler3(matrix1, matrix2));
+        SetNextHandler(new TraceHandler(matrix1, matrix2));
 
         this._matrix1 = matrix1;
         this._matrix2 = matrix2;
@@ -678,14 +678,14 @@ class Handler2 : BaseHandler
     }
 }
 
-class Handler1 : BaseHandler
+class SumHandler : BaseHandler
 {
     private SquareMatrix _matrix1;
     private SquareMatrix _matrix2;
-    public Handler1(SquareMatrix matrix1, SquareMatrix matrix2) : base(matrix1, matrix2)
+    public SumHandler(SquareMatrix matrix1, SquareMatrix matrix2) : base(matrix1, matrix2)
     {
         PrivateEvent = new Sum();
-        SetNextHandler(new Handler2(matrix1, matrix2));
+        SetNextHandler(new ProductHandler(matrix1, matrix2));
 
         this._matrix1 = matrix1;
         this._matrix2 = matrix2;
@@ -829,8 +829,8 @@ class Program
         ExampleMatrix2.PrintMatrix();
         Console.WriteLine();
 
-        BaseHandler handler1 = new Handler1(ExampleMatrix1, ExampleMatrix2);
-        ChainApp ChainApp = new ChainApp(handler1);
+        BaseHandler SumHandler = new SumHandler(ExampleMatrix1, ExampleMatrix2);
+        ChainApp ChainApp = new ChainApp(SumHandler);
 
         Console.WriteLine("Выберите действие:");
         Console.WriteLine("1. Сложение");
@@ -840,13 +840,13 @@ class Program
         Console.WriteLine("5. Найти обратную матрицу");
 
         int choice;
-        if (int.TryParse(Console.ReadLine(), out choice) && choice >= 1 && choice <= 5)
+        if (int.TryParse(Console.ReadLine(), out choice))
         {
             ChainApp.Execute(choice, ExampleMatrix1, ExampleMatrix2);
         }
         else
         {
-            Console.WriteLine("Неправильный выбор. Попробуйте снова.");
+            Console.WriteLine("Буквы запрещены.");
         }
     }
 }
