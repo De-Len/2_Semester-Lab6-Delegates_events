@@ -558,17 +558,17 @@ public abstract class BaseHandler
     protected BaseHandler Next { get; set; }
     protected IEvent PrivateEvent { get; set; }
 
-    public virtual void Handle(IEvent ev)
+    public virtual void Handle(IEvent @event)
     {
-        if (PrivateEvent.GetType() == ev.GetType())
+        if (PrivateEvent.GetType() == @event.GetType())
         {
             Console.WriteLine("{0} обработано", PrivateEvent.EventType);
-            HandleEvent(ev);
+            HandleEvent(@event);
         }
         else
         {
             Console.WriteLine("Отправка события следующему обработчику...");
-            Next?.Handle(ev);
+            Next?.Handle(@event);
         }
     }
 
@@ -577,7 +577,7 @@ public abstract class BaseHandler
         Next = newHandler;
     }
 
-    protected abstract void HandleEvent(IEvent ev);
+    protected abstract void HandleEvent(IEvent @event);
 }
 
 class InvertHandler : BaseHandler
@@ -594,7 +594,7 @@ class InvertHandler : BaseHandler
         this._matrix2 = matrix2;
     }
 
-    protected override void HandleEvent(IEvent ev)
+    protected override void HandleEvent(IEvent @event)
     {
         Console.WriteLine("Транспонирование первой матрицы:");
         _matrix1.PrintInvertMatrix();
@@ -617,7 +617,7 @@ class DeterminantHandler : BaseHandler
         this._matrix2 = matrix2;
     }
 
-    protected override void HandleEvent(IEvent ev)
+    protected override void HandleEvent(IEvent @event)
     {
         Console.WriteLine("Определитель первой матрицы:");
         _matrix1.PrintDeterminant();
@@ -639,7 +639,7 @@ class TraceHandler : BaseHandler
         this._matrix1 = matrix1;
         this._matrix2 = matrix2;
     }
-    protected override void HandleEvent(IEvent ev)
+    protected override void HandleEvent(IEvent @event)
     {
         Console.WriteLine("След первой матрицы:");
         _matrix1.PrintTrace();
@@ -662,7 +662,7 @@ class ProductHandler : BaseHandler
         this._matrix2 = matrix2;
     }
 
-    protected override void HandleEvent(IEvent ev)
+    protected override void HandleEvent(IEvent @event)
     {
         try
         {
@@ -691,7 +691,7 @@ class SumHandler : BaseHandler
         this._matrix2 = matrix2;
     }
 
-    protected override void HandleEvent(IEvent ev)
+    protected override void HandleEvent(IEvent @event)
     {
         try
         {
@@ -718,32 +718,32 @@ public class ChainApp
 
     public void Execute(int choice, SquareMatrix matrix1, SquareMatrix matrix2)
     {
-        IEvent ev = null;
+        IEvent @event = null;
 
         // Создание экземпляра события в зависимости от выбора
         switch (choice)
         {
             case 1:
-                ev = new Sum();
+                @event = new Sum();
                 break;
             case 2:
-                ev = new Product();
+                @event = new Product();
                 break;
             case 3:
-                ev = new Trace();
+                @event = new Trace();
                 break;
             case 4:
-                ev = new Determinant();
+                @event = new Determinant();
                 break;
             case 5:
-                ev = new MatrixInvert();
+                @event = new MatrixInvert();
                 break;
             default:
-                Console.WriteLine("Такого не знаем, ты ошибся номером, друг.");
+                Console.WriteLine("Такого не знаем, ты ошибся номером, друг.\n");
                 return;
         }
 
-        _calculationHandler.Handle(ev);
+        _calculationHandler.Handle(@event);
     }
 }
 
@@ -781,16 +781,8 @@ class Program
                 }
                 if (SizeOfMatrix1 <= 0 || SizeOfMatrix2 <= 0)
                 {
-                    try
-                    {
-                        throw new Exception("Размер должен быть больше 0");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("\nОшибка: " + ex.Message + "\n");
-                        InputSuccess = false;
-                    }
-
+                    Console.WriteLine("\nОшибка: Размер должен быть больше 0");
+                    InputSuccess = false;
                 }
             }
             catch (FormatException)
@@ -832,21 +824,29 @@ class Program
         BaseHandler SumHandler = new SumHandler(ExampleMatrix1, ExampleMatrix2);
         ChainApp ChainApp = new ChainApp(SumHandler);
 
-        Console.WriteLine("Выберите действие:");
-        Console.WriteLine("1. Сложение");
-        Console.WriteLine("2. Произведение");
-        Console.WriteLine("3. След");
-        Console.WriteLine("4. Найти определитель");
-        Console.WriteLine("5. Найти обратную матрицу");
+        while (true)
+        {
+            Console.WriteLine("Выберите действие:");
+            Console.WriteLine("1. Сложение");
+            Console.WriteLine("2. Произведение");
+            Console.WriteLine("3. След");
+            Console.WriteLine("4. Найти определитель");
+            Console.WriteLine("5. Найти обратную матрицу");
+            Console.WriteLine("6. Завершить программу");
 
-        int choice;
-        if (int.TryParse(Console.ReadLine(), out choice))
-        {
-            ChainApp.Execute(choice, ExampleMatrix1, ExampleMatrix2);
-        }
-        else
-        {
-            Console.WriteLine("Буквы запрещены.");
+            int choice;
+            if (int.TryParse(Console.ReadLine(), out choice))
+            {
+                if (choice == 6)
+                {
+                    return;
+                }
+                ChainApp.Execute(choice, ExampleMatrix1, ExampleMatrix2);
+            }
+            else
+            {
+                Console.WriteLine("Введиту номер операции!.\n");
+            }
         }
     }
 }
